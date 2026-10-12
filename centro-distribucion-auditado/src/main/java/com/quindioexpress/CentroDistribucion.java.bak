@@ -1,0 +1,157 @@
+package com.quindioexpress;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Gestiona el registro, la búsqueda y la asignación
+ * de paquetes y repartidores de QuindíoExpress.
+ */
+public class CentroDistribucion {
+
+    private final Map<String, Paquete> paquetesPorCodigo;
+    private final List<Repartidor> repartidores;
+    private final Map<String, String> asignaciones;
+
+    public CentroDistribucion() {
+        this.paquetesPorCodigo = new HashMap<>();
+        this.repartidores = new ArrayList<>();
+        this.asignaciones = new HashMap<>();
+    }
+
+    /**
+     * Registra un paquete usando su código como clave.
+     *
+     * @throws IllegalArgumentException si el paquete es null
+     *         o si ya existe un paquete con el mismo código.
+     */
+    public void registrarPaquete(Paquete paquete) {
+        if (paquete == null) {
+            throw new IllegalArgumentException(
+                    "El paquete no puede ser null.");
+        }
+
+        String codigo = paquete.getCodigo();
+
+        if (paquetesPorCodigo.containsKey(codigo)) {
+            throw new IllegalArgumentException(
+                    "Ya existe un paquete con el código: " + codigo);
+        }
+
+        paquetesPorCodigo.put(codigo, paquete);
+    }
+
+    /**
+     * Busca un paquete por su código.
+     *
+     * @return el paquete encontrado o null si no existe.
+     */
+    public Paquete buscarPaquete(String codigo) {
+        if (codigo == null || codigo.isBlank()) {
+            return null;
+        }
+
+        return paquetesPorCodigo.get(codigo.trim());
+    }
+
+    /**
+     * Registra un repartidor si su identificador no está repetido.
+     *
+     * @throws IllegalArgumentException si el repartidor es null
+     *         o si ya existe su identificador.
+     */
+    public void registrarRepartidor(Repartidor repartidor) {
+        if (repartidor == null) {
+            throw new IllegalArgumentException(
+                    "El repartidor no puede ser null.");
+        }
+
+        for (Repartidor registrado : repartidores) {
+            if (registrado.getId().equals(repartidor.getId())) {
+                throw new IllegalArgumentException(
+                        "Ya existe un repartidor con el ID: "
+                                + repartidor.getId());
+            }
+        }
+
+        repartidores.add(repartidor);
+    }
+
+    /**
+     * Busca un repartidor por su identificador.
+     *
+     * @return el repartidor encontrado o null si no existe.
+     */
+    public Repartidor buscarRepartidor(String id) {
+        if (id == null || id.isBlank()) {
+            return null;
+        }
+
+        for (Repartidor repartidor : repartidores) {
+            if (repartidor.getId().equals(id.trim())) {
+                return repartidor;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Asigna un paquete al primer repartidor disponible
+     * cuya zona coincida con el destino del paquete.
+     *
+     * @param codigoPaquete código del paquete que se asignará.
+     * @return true si la asignación fue exitosa;
+     *         false si no se pudo asignar.
+     */
+    public boolean asignarPaquete(String codigoPaquete) {
+        Paquete paquete = buscarPaquete(codigoPaquete);
+
+        if (paquete == null
+                || asignaciones.containsKey(paquete.getCodigo())) {
+            return false;
+        }
+
+        for (Repartidor repartidor : repartidores) {
+            if (repartidor.isDisponible()
+                    && repartidor.getZona().equalsIgnoreCase(
+                            paquete.getDestino())) {
+
+                asignaciones.put(
+                        paquete.getCodigo(),
+                        repartidor.getId()
+                );
+
+                repartidor.setDisponible(false);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Obtiene el identificador del repartidor asignado
+     * a un paquete.
+     *
+     * @param codigoPaquete código del paquete consultado.
+     * @return ID del repartidor o null si no está asignado.
+     */
+    public String obtenerRepartidorAsignado(String codigoPaquete) {
+        if (codigoPaquete == null || codigoPaquete.isBlank()) {
+            return null;
+        }
+
+        return asignaciones.get(codigoPaquete.trim());
+    }
+
+    public int cantidadPaquetes() {
+        return paquetesPorCodigo.size();
+    }
+
+    public int cantidadRepartidores() {
+        return repartidores.size();
+    }
+}
